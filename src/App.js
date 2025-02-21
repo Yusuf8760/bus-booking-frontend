@@ -9,14 +9,14 @@ const App = () => {
   const [userName, setUserName] = useState("");
 
   useEffect(() => {
-    axios.get("https://yourbackend.railway.app/buses").then((res) => {
+    axios.get("https://bus-ticket-booking-production.up.railway.app/buses").then((res) => {
       setBuses(res.data);
     });
   }, []);
 
   const fetchSeats = (busId) => {
     setSelectedBus(busId);
-    axios.get(`https://yourbackend.railway.app/buses/${busId}/seats`).then((res) => {
+    axios.get(`https://bus-ticket-booking-production.up.railway.app/buses/${busId}/seats`).then((res) => {
       setSeats(res.data);
     });
   };
@@ -26,7 +26,7 @@ const App = () => {
       alert("Please enter details");
       return;
     }
-    axios.post("https://yourbackend.railway.app/book", {
+    axios.post("https://bus-ticket-booking-production.up.railway.app/book", {
       user_name: userName,
       bus_id: selectedBus,
       seat_id: selectedSeat,
