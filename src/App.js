@@ -21,19 +21,68 @@ const App = () => {
     });
   };
 
-  const bookSeat = () => {
+  const handlePayment = async () => {
     if (!userName || !selectedBus || !selectedSeat) {
-      alert("Please enter details");
+      alert("Please enter all details before booking.");
       return;
     }
-    axios.post("https://bus-ticket-booking-production.up.railway.app/book", {
-      user_name: userName,
-      bus_id: selectedBus,
-      seat_id: selectedSeat,
-    }).then(() => {
-      alert("Seat booked successfully!");
-      fetchSeats(selectedBus);
-    });
+
+    try {
+      // Step 1: Create Razorpay Order
+      const orderResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/create-order", {
+        amount: 500, // Example amount in INR
+      });
+
+      if (!orderResponse.data.success) {
+        throw new Error("Failed to create order.");
+      }
+
+      const { order } = orderResponse.data;
+
+      // Step 2: Open Razorpay Payment Gateway
+      const options = {
+        key: "rzp_test_QooNDwSUafjvWt", // Replace with your Razorpay Test Key
+        amount: order.amount,
+        currency: "INR",
+        name: "Bus Ticket Booking",
+        description: "Seat Booking Payment",
+        order_id: order.id,
+        handler: async function (response) {
+          console.log("Payment successful:", response);
+
+          // Step 3: Verify Payment and Book Seat
+          const verifyResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/book", {
+            user_name: userName,
+            bus_id: selectedBus,
+            seat_id: selectedSeat,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          });
+
+          if (verifyResponse.data.message === "Seat booked successfully!") {
+            alert("Seat booked successfully!");
+            fetchSeats(selectedBus);
+          } else {
+            alert("Payment verification failed.");
+          }
+        },
+        prefill: {
+          name: userName,
+          email: "user@example.com",
+          contact: "9876543210",
+        },
+        theme: {
+          color: "#F37254",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("Payment failed! " + error.message);
+    }
   };
 
   return (
@@ -76,11 +125,8 @@ const App = () => {
               </button>
             ))}
           </div>
-          <button
-            className="bg-blue-500 text-white p-2 mt-4"
-            onClick={bookSeat}
-          >
-            Book Selected Seat
+          <button className="bg-blue-500 text-white p-2 mt-4" onClick={handlePayment}>
+            Proceed to Pay & Book
           </button>
         </div>
       )}
@@ -89,3 +135,4 @@ const App = () => {
 };
 
 export default App;
+
