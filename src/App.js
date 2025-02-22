@@ -7,22 +7,41 @@ const App = () => {
   const [seats, setSeats] = useState([]);
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [userName, setUserName] = useState("");
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
   useEffect(() => {
+    // Load Razorpay script dynamically
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => setRazorpayLoaded(true);
+    document.body.appendChild(script);
+
+    // Fetch bus data
     axios.get("https://bus-ticket-booking-production.up.railway.app/buses")
       .then((res) => setBuses(res.data))
       .catch((err) => console.error("Error fetching buses:", err));
+
+    return () => {
+      document.body.removeChild(script);
+    };
   }, []);
 
   const fetchSeats = (busId) => {
     setSelectedBus(busId);
-    setSelectedSeat(null);
+    setSelectedSeat(null); // Reset seat selection when changing buses
+
     axios.get(`https://bus-ticket-booking-production.up.railway.app/buses/${busId}/seats`)
       .then((res) => setSeats(res.data))
       .catch((err) => console.error("Error fetching seats:", err));
   };
 
   const handlePayment = async () => {
+    if (!razorpayLoaded) {
+      alert("Razorpay failed to load. Please refresh the page.");
+      return;
+    }
+
     if (!userName || !selectedBus || !selectedSeat) {
       alert("Please enter all details before booking.");
       return;
@@ -31,7 +50,7 @@ const App = () => {
     try {
       // Step 1: Create Razorpay Order
       const orderResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/create-order", {
-        amount: 500, // Replace with actual amount
+        amount: 500, // Example amount in INR
       });
 
       if (!orderResponse.data.success) {
@@ -49,28 +68,23 @@ const App = () => {
         description: "Seat Booking Payment",
         order_id: order.id,
         handler: async function (response) {
-          console.log("✅ Payment successful:", response);
+          console.log("Payment successful:", response);
 
           // Step 3: Verify Payment and Book Seat
-          try {
-            const verifyResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/book", {
-              user_name: userName,
-              bus_id: selectedBus,
-              seat_id: selectedSeat,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            });
+          const verifyResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/book", {
+            user_name: userName,
+            bus_id: selectedBus,
+            seat_id: selectedSeat,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          });
 
-            if (verifyResponse.data.message === "Seat booked successfully!") {
-              alert("🎉 Seat booked successfully!");
-              fetchSeats(selectedBus);
-            } else {
-              alert("❌ Payment verification failed.");
-            }
-          } catch (error) {
-            console.error("Error verifying payment:", error);
-            alert("Payment verification failed. Please contact support.");
+          if (verifyResponse.data.message === "Seat booked successfully!") {
+            alert("Seat booked successfully!");
+            fetchSeats(selectedBus);
+          } else {
+            alert("Payment verification failed.");
           }
         },
         prefill: {
@@ -93,7 +107,7 @@ const App = () => {
 
   return (
     <div className="p-8">
-      <h1 className="text-xl font-bold">🚌 Bus Ticket Booking</h1>
+      <h1 className="text-xl font-bold">Bus Ticket Booking</h1>
       <input
         type="text"
         placeholder="Enter your name"
@@ -101,12 +115,12 @@ const App = () => {
         onChange={(e) => setUserName(e.target.value)}
       />
 
-      <h2 className="text-lg font-bold mt-4">🚍 Available Buses</h2>
+      <h2 className="text-lg font-bold mt-4">Available Buses</h2>
       <ul>
         {buses.map((bus) => (
           <li
             key={bus.id}
-            className={`cursor-pointer p-2 m-2 ${selectedBus === bus.id ? "bg-blue-300" : "bg-gray-200"}`}
+            className="cursor-pointer p-2 bg-gray-200 m-2"
             onClick={() => fetchSeats(bus.id)}
           >
             {bus.name} - {bus.owner_name}
@@ -116,14 +130,14 @@ const App = () => {
 
       {selectedBus && (
         <div>
-          <h2 className="text-lg font-bold mt-4">🎟 Select Your Seat</h2>
+          <h2 className="text-lg font-bold mt-4">Select Your Seat</h2>
           <div className="grid grid-cols-4 gap-2 mt-2">
             {seats.map((seat) => (
               <button
                 key={seat.id}
-                className={`p-4 rounded border transition-all ${
-                  seat.is_booked ? "bg-red-500 text-white cursor-not-allowed" : "bg-gray-300 hover:bg-green-400"
-                } ${selectedSeat === seat.id ? "bg-green-500" : ""}`}
+                className={`p-4 rounded border ${
+                  seat.is_booked ? "bg-red-500 text-white" : "bg-gray-300"
+                } ${selectedSeat === seat.id ? "bg-green-400" : ""}`}
                 disabled={seat.is_booked}
                 onClick={() => setSelectedSeat(seat.id)}
               >
@@ -131,8 +145,8 @@ const App = () => {
               </button>
             ))}
           </div>
-          <button className="bg-blue-500 text-white p-2 mt-4 hover:bg-blue-600" onClick={handlePayment}>
-            💳 Proceed to Pay & Book
+          <button className="bg-blue-500 text-white p-2 mt-4" onClick={handlePayment}>
+            Proceed to Pay & Book
           </button>
         </div>
       )}
