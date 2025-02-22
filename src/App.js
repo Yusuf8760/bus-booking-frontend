@@ -9,36 +9,45 @@ const App = () => {
   const [userName, setUserName] = useState("");
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
+  // Load Razorpay script
   useEffect(() => {
-    // Load Razorpay script dynamically
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
-    script.onload = () => setRazorpayLoaded(true);
+    script.onload = () => {
+      console.log("✅ Razorpay script loaded");
+      setRazorpayLoaded(true);
+    };
+    script.onerror = () => {
+      console.error("❌ Failed to load Razorpay script");
+      alert("Failed to load Razorpay. Please check your internet connection and refresh.");
+    };
     document.body.appendChild(script);
-
-    // Fetch bus data
-    axios.get("https://bus-ticket-booking-production.up.railway.app/buses")
-      .then((res) => setBuses(res.data))
-      .catch((err) => console.error("Error fetching buses:", err));
 
     return () => {
       document.body.removeChild(script);
     };
   }, []);
 
+  // Fetch available buses
+  useEffect(() => {
+    axios.get("https://bus-ticket-booking-production.up.railway.app/buses")
+      .then((res) => setBuses(res.data))
+      .catch((error) => console.error("Error fetching buses:", error));
+  }, []);
+
+  // Fetch available seats for selected bus
   const fetchSeats = (busId) => {
     setSelectedBus(busId);
-    setSelectedSeat(null); // Reset seat selection when changing buses
-
     axios.get(`https://bus-ticket-booking-production.up.railway.app/buses/${busId}/seats`)
       .then((res) => setSeats(res.data))
-      .catch((err) => console.error("Error fetching seats:", err));
+      .catch((error) => console.error("Error fetching seats:", error));
   };
 
+  // Handle Razorpay payment and booking
   const handlePayment = async () => {
-    if (!razorpayLoaded) {
-      alert("Razorpay failed to load. Please refresh the page.");
+    if (!razorpayLoaded || typeof window.Razorpay === "undefined") {
+      alert("Razorpay is not loaded. Please refresh the page.");
       return;
     }
 
@@ -48,7 +57,7 @@ const App = () => {
     }
 
     try {
-      // Step 1: Create Razorpay Order
+      // Step 1: Create an order in Razorpay
       const orderResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/create-order", {
         amount: 500, // Example amount in INR
       });
@@ -59,7 +68,7 @@ const App = () => {
 
       const { order } = orderResponse.data;
 
-      // Step 2: Open Razorpay Payment Gateway
+      // Step 2: Configure and open Razorpay payment gateway
       const options = {
         key: "rzp_test_QooNDwSUafjvWt", // Replace with your Razorpay Test Key
         amount: order.amount,
@@ -68,9 +77,9 @@ const App = () => {
         description: "Seat Booking Payment",
         order_id: order.id,
         handler: async function (response) {
-          console.log("Payment successful:", response);
+          console.log("✅ Payment successful:", response);
 
-          // Step 3: Verify Payment and Book Seat
+          // Step 3: Verify payment and book the seat
           const verifyResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/book", {
             user_name: userName,
             bus_id: selectedBus,
@@ -81,10 +90,10 @@ const App = () => {
           });
 
           if (verifyResponse.data.message === "Seat booked successfully!") {
-            alert("Seat booked successfully!");
-            fetchSeats(selectedBus);
+            alert("🎉 Seat booked successfully!");
+            fetchSeats(selectedBus); // Refresh seat availability
           } else {
-            alert("Payment verification failed.");
+            alert("⚠️ Payment verification failed.");
           }
         },
         prefill: {
@@ -92,22 +101,22 @@ const App = () => {
           email: "user@example.com",
           contact: "9876543210",
         },
-        theme: {
-          color: "#F37254",
-        },
+        theme: { color: "#F37254" },
       };
 
+      console.log("🚀 Initializing Razorpay...");
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (error) {
-      console.error("Payment error:", error);
+      console.error("❌ Payment error:", error);
       alert("Payment failed! " + error.message);
     }
   };
 
   return (
     <div className="p-8">
-      <h1 className="text-xl font-bold">Bus Ticket Booking</h1>
+      <h1 className="text-xl font-bold">🎟️ Bus Ticket Booking</h1>
+      
       <input
         type="text"
         placeholder="Enter your name"
@@ -115,7 +124,7 @@ const App = () => {
         onChange={(e) => setUserName(e.target.value)}
       />
 
-      <h2 className="text-lg font-bold mt-4">Available Buses</h2>
+      <h2 className="text-lg font-bold mt-4">🚌 Available Buses</h2>
       <ul>
         {buses.map((bus) => (
           <li
@@ -130,7 +139,7 @@ const App = () => {
 
       {selectedBus && (
         <div>
-          <h2 className="text-lg font-bold mt-4">Select Your Seat</h2>
+          <h2 className="text-lg font-bold mt-4">💺 Select Your Seat</h2>
           <div className="grid grid-cols-4 gap-2 mt-2">
             {seats.map((seat) => (
               <button
@@ -146,7 +155,7 @@ const App = () => {
             ))}
           </div>
           <button className="bg-blue-500 text-white p-2 mt-4" onClick={handlePayment}>
-            Proceed to Pay & Book
+            💰 Proceed to Pay & Book
           </button>
         </div>
       )}
