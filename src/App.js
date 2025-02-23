@@ -145,9 +145,9 @@ const App = () => {
               {selectedBus && (
         <div>
           <h2 className="text-lg font-bold mt-4">💺 Select Your Seats</h2>
-          <div className="grid grid-cols-5 gap-2 mt-2">
+          <div className="grid grid-cols-5 gap-2 mt-2 border p-4">
             {seats.map(seat => (
-              <button key={seat.id} className={`p-4 rounded border ${seat.is_booked ? "bg-red-500 text-white" : selectedSeats.includes(seat.id) ? "bg-green-400" : "bg-gray-300"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_number}</button>
+              <button key={seat.id} className={`w-12 h-12 rounded border text-sm font-bold ${seat.is_booked ? "bg-red-500 text-white" : selectedSeats.includes(seat.id) ? "bg-green-400" : "bg-gray-300"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_number}</button>
             ))}
           </div>
           <button className="bg-blue-500 text-white p-2 mt-4" onClick={handlePayment}>💰 Proceed to Pay & Book</button>
