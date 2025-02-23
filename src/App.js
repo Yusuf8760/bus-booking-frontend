@@ -2,15 +2,17 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const App = () => {
+  // State variables
   const [buses, setBuses] = useState([]);
   const [selectedBus, setSelectedBus] = useState(null);
   const [seats, setSeats] = useState([]);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [userName, setUserName] = useState("");
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [deck, setDeck] = useState("lower");
 
   // Load Razorpay script
-useEffect(() => {
+  useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
@@ -20,15 +22,15 @@ useEffect(() => {
     return () => document.body.removeChild(script);
   }, []);
 
+  // Fetch available buses
   useEffect(() => {
-    // Fetch available buses
-axios.get("https://bus-ticket-booking-production.up.railway.app/buses")
+    axios.get("https://bus-ticket-booking-production.up.railway.app/buses")
       .then(res => setBuses(res.data))
       .catch(error => console.error("Error fetching buses:", error));
   }, []);
 
   // Fetch available seats for selected bus
-const fetchSeats = (busId) => {
+  const fetchSeats = (busId) => {
     setSelectedBus(busId);
     axios.get(`https://bus-ticket-booking-production.up.railway.app/buses/${busId}/seats`)
       .then(res => setSeats(res.data))
@@ -36,14 +38,16 @@ const fetchSeats = (busId) => {
   };
 
   // Toggle seat selection
-const toggleSeatSelection = (seatId) => {
-    setSelectedSeats(prev =>
-      prev.includes(seatId) ? prev.filter(id => id !== seatId) : [...prev, seatId]
-    );
+  const toggleSeatSelection = (seatId) => {
+    if (selectedSeats.includes(seatId)) {
+      setSelectedSeats(selectedSeats.filter(id => id !== seatId));
+    } else {
+      setSelectedSeats([...selectedSeats, seatId]);
+    }
   };
 
   // Handle Razorpay payment and booking
-const handlePayment = async () => {
+  const handlePayment = async () => {
     if (!razorpayLoaded || !window.Razorpay) return alert("Razorpay not loaded");
     if (!userName || !selectedBus || selectedSeats.length === 0) return alert("Fill all details");
     
@@ -85,24 +89,28 @@ const handlePayment = async () => {
   };
 
   return (
-    <div className="p-8">
-      <h1 className="text-xl font-bold">🎟️ Bus Ticket Booking</h1>
-      <input type="text" placeholder="Enter your name" className="border p-2 m-2" onChange={(e) => setUserName(e.target.value)} />
-      <h2 className="text-lg font-bold mt-4">🚌 Available Buses</h2>
-      <ul>
+    <div className="p-8 bg-gray-100 min-h-screen">
+      <h1 className="text-2xl font-bold text-center mb-4">🚌 Bus Ticket Booking</h1>
+      <input type="text" placeholder="Enter your name" className="border p-2 m-2 block mx-auto" onChange={(e) => setUserName(e.target.value)} />
+      <h2 className="text-lg font-bold mt-4 text-center">Available Buses</h2>
+      <ul className="flex flex-wrap justify-center">
         {buses.map(bus => (
-          <li key={bus.id} className="cursor-pointer p-2 bg-gray-200 m-2" onClick={() => fetchSeats(bus.id)}>{bus.name} - {bus.owner_name}</li>
+          <li key={bus.id} className="cursor-pointer p-3 bg-blue-500 text-white m-2 rounded-md" onClick={() => fetchSeats(bus.id)}>{bus.name} - {bus.owner_name}</li>
         ))}
       </ul>
       {selectedBus && (
-        <div>
-          <h2 className="text-lg font-bold mt-4">💺 Select Your Seats</h2>
-          <div className="grid grid-cols-5 gap-2 mt-2 border p-4">
-            {seats.map(seat => (
-              <button key={seat.id} className={`w-12 h-12 rounded border text-sm font-bold ${seat.is_booked ? "bg-red-500 text-white" : selectedSeats.includes(seat.id) ? "bg-green-400" : "bg-gray-300"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_number}</button>
+        <div className="mt-6 text-center">
+          <h2 className="text-lg font-bold">💺 Select Your Seats</h2>
+          <div className="flex justify-center mb-4">
+            <button className={`p-2 mx-2 ${deck === "lower" ? "bg-blue-500 text-white" : "bg-gray-300"}`} onClick={() => setDeck("lower")}>Lower Deck</button>
+            <button className={`p-2 mx-2 ${deck === "upper" ? "bg-blue-500 text-white" : "bg-gray-300"}`} onClick={() => setDeck("upper")}>Upper Deck</button>
+          </div>
+          <div className="grid grid-cols-4 gap-3 p-4 bg-white shadow-md rounded-md mx-auto max-w-lg">
+            {seats.filter(seat => seat.deck === deck).map(seat => (
+              <button key={seat.id} className={`w-12 h-12 rounded-md font-bold border ${seat.is_booked ? "bg-red-500 text-white" : selectedSeats.includes(seat.id) ? "bg-green-400" : "bg-gray-200"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_number}</button>
             ))}
           </div>
-          <button className="bg-blue-500 text-white p-2 mt-4" onClick={handlePayment}>💰 Proceed to Pay & Book</button>
+          <button className="bg-green-600 text-white p-3 mt-4 rounded-md" onClick={handlePayment}>💰 Proceed to Pay & Book</button>
         </div>
       )}
     </div>
