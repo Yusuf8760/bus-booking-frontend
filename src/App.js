@@ -99,7 +99,7 @@ const App = () => {
         prefill: {
           name: userName,
           email: "user@example.com",
-          contact: "9876543210",
+          contact: "9510723153",
         },
         theme: { color: "#F37254" },
       };
@@ -142,21 +142,15 @@ const App = () => {
           <h2 className="text-lg font-bold mt-4">💺 Select Your Seat</h2>
           <div className="grid grid-cols-4 gap-2 mt-2">
             {seats.map((seat) => (
-              <button
-                key={seat.id}
-                className={`p-4 rounded border ${
-                  seat.is_booked ? "bg-red-500 text-white" : "bg-gray-300"
-                } ${selectedSeat === seat.id ? "bg-green-400" : ""}`}
-                disabled={seat.is_booked}
-                onClick={() => setSelectedSeat(seat.id)}
-              >
-                {seat.seat_number}
-              </button>
+              {selectedBus && (
+        <div>
+          <h2 className="text-lg font-bold mt-4">💺 Select Your Seats</h2>
+          <div className="grid grid-cols-5 gap-2 mt-2">
+            {seats.map(seat => (
+              <button key={seat.id} className={`p-4 rounded border ${seat.is_booked ? "bg-red-500 text-white" : selectedSeats.includes(seat.id) ? "bg-green-400" : "bg-gray-300"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_number}</button>
             ))}
           </div>
-          <button className="bg-blue-500 text-white p-2 mt-4" onClick={handlePayment}>
-            💰 Proceed to Pay & Book
-          </button>
+          <button className="bg-blue-500 text-white p-2 mt-4" onClick={handlePayment}>💰 Proceed to Pay & Book</button>
         </div>
       )}
     </div>
