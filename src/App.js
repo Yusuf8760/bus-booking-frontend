@@ -2,16 +2,13 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const App = () => {
-  // State variables
   const [buses, setBuses] = useState([]);
   const [selectedBus, setSelectedBus] = useState(null);
   const [seats, setSeats] = useState([]);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [userName, setUserName] = useState("");
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const [deck, setDeck] = useState("lower");
 
-  // Load Razorpay script
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
@@ -22,14 +19,12 @@ const App = () => {
     return () => document.body.removeChild(script);
   }, []);
 
-  // Fetch available buses
   useEffect(() => {
     axios.get("https://bus-ticket-booking-production.up.railway.app/buses")
       .then(res => setBuses(res.data))
       .catch(error => console.error("Error fetching buses:", error));
   }, []);
 
-  // Fetch available seats for selected bus
   const fetchSeats = (busId) => {
     setSelectedBus(busId);
     axios.get(`https://bus-ticket-booking-production.up.railway.app/buses/${busId}/seats`)
@@ -37,16 +32,12 @@ const App = () => {
       .catch(error => console.error("Error fetching seats:", error));
   };
 
-  // Toggle seat selection
   const toggleSeatSelection = (seatId) => {
-    if (selectedSeats.includes(seatId)) {
-      setSelectedSeats(selectedSeats.filter(id => id !== seatId));
-    } else {
-      setSelectedSeats([...selectedSeats, seatId]);
-    }
+    setSelectedSeats((prev) =>
+      prev.includes(seatId) ? prev.filter((id) => id !== seatId) : [...prev, seatId]
+    );
   };
 
-  // Handle Razorpay payment and booking
   const handlePayment = async () => {
     if (!razorpayLoaded || !window.Razorpay) return alert("Razorpay not loaded");
     if (!userName || !selectedBus || selectedSeats.length === 0) return alert("Fill all details");
@@ -101,14 +92,23 @@ const App = () => {
       {selectedBus && (
         <div className="mt-6 text-center">
           <h2 className="text-lg font-bold">💺 Select Your Seats</h2>
-          <div className="flex justify-center mb-4">
-            <button className={`p-2 mx-2 ${deck === "lower" ? "bg-blue-500 text-white" : "bg-gray-300"}`} onClick={() => setDeck("lower")}>Lower Deck</button>
-            <button className={`p-2 mx-2 ${deck === "upper" ? "bg-blue-500 text-white" : "bg-gray-300"}`} onClick={() => setDeck("upper")}>Upper Deck</button>
-          </div>
-          <div className="grid grid-cols-4 gap-3 p-4 bg-white shadow-md rounded-md mx-auto max-w-lg">
-            {seats.filter(seat => seat.deck === deck).map(seat => (
-              <button key={seat.id} className={`w-12 h-12 rounded-md font-bold border ${seat.is_booked ? "bg-red-500 text-white" : selectedSeats.includes(seat.id) ? "bg-green-400" : "bg-gray-200"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_number}</button>
-            ))}
+          <div className="flex flex-col md:flex-row justify-center items-center gap-6">
+            <div>
+              <h3 className="text-md font-bold">Upper Deck</h3>
+              <div className="grid grid-cols-4 gap-3 p-4 bg-white shadow-md rounded-md">
+                {seats.filter(seat => seat.deck === 'upper').map(seat => (
+                  <button key={seat.id} className={`w-12 h-12 rounded-md font-bold border ${seat.is_booked ? "bg-red-500 text-white" : selectedSeats.includes(seat.id) ? "bg-green-400" : "bg-gray-200"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_number}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-md font-bold">Lower Deck</h3>
+              <div className="grid grid-cols-4 gap-3 p-4 bg-white shadow-md rounded-md">
+                {seats.filter(seat => seat.deck === 'lower').map(seat => (
+                  <button key={seat.id} className={`w-12 h-12 rounded-md font-bold border ${seat.is_booked ? "bg-red-500 text-white" : selectedSeats.includes(seat.id) ? "bg-green-400" : "bg-gray-200"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_number}</button>
+                ))}
+              </div>
+            </div>
           </div>
           <button className="bg-green-600 text-white p-3 mt-4 rounded-md" onClick={handlePayment}>💰 Proceed to Pay & Book</button>
         </div>
