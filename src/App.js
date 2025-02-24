@@ -32,50 +32,15 @@ const App = () => {
       .catch(error => console.error("Error fetching seats:", error));
   };
 
-  const toggleSeatSelection = (seatId) => {
-    setSelectedSeats((prev) =>
-      prev.includes(seatId) ? prev.filter((id) => id !== seatId) : [...prev, seatId]
-    );
-  };
-
-  const handlePayment = async () => {
-    if (!razorpayLoaded || !window.Razorpay) return alert("Razorpay not loaded");
-    if (!userName || !selectedBus || selectedSeats.length === 0) return alert("Fill all details");
-    
-    try {
-      const orderResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/create-order", { amount: selectedSeats.length * 500 });
-      if (!orderResponse.data.success) throw new Error("Order creation failed");
-      
-      const options = {
-        key: "rzp_test_QooNDwSUafjvWt",
-        amount: orderResponse.data.order.amount,
-        currency: "INR",
-        name: "Bus Ticket Booking",
-        description: "Seat Booking Payment",
-        order_id: orderResponse.data.order.id,
-        handler: async function (response) {
-          const verifyResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/book", {
-            user_name: userName,
-            bus_id: selectedBus,
-            seat_ids: selectedSeats,
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
-          });
-          if (verifyResponse.data.message === "Seat booked successfully!") {
-            alert("Seat booked successfully!");
-            fetchSeats(selectedBus);
-            setSelectedSeats([]);
-          } else {
-            alert("Payment verification failed");
-          }
-        },
-        prefill: { name: userName, email: "user@example.com", contact: "9876543210" },
-        theme: { color: "#F37254" },
-      };
-      new window.Razorpay(options).open();
-    } catch (error) {
-      alert("Payment failed! " + error.message);
+  const toggleSeatSelection = (seat) => {
+    if (seat.seat_type === 'double') {
+      const pair = seats.filter(s => s.position === seat.position && s.deck === seat.deck);
+      const pairIds = pair.map(s => s.id);
+      setSelectedSeats(prev => prev.some(id => pairIds.includes(id))
+        ? prev.filter(id => !pairIds.includes(id))
+        : [...prev, ...pairIds]);
+    } else {
+      setSelectedSeats(prev => prev.includes(seat.id) ? prev.filter(id => id !== seat.id) : [...prev, seat.id]);
     }
   };
 
@@ -97,7 +62,7 @@ const App = () => {
               <h3 className="text-lg font-semibold text-gray-700">Upper Deck</h3>
               <div className="grid grid-cols-3 gap-4 p-6 bg-white shadow-lg rounded-lg">
                 {seats.filter(seat => seat.deck === 'upper').map(seat => (
-                  <button key={seat.id} className={`w-14 h-14 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_label}</button>
+                  <button key={seat.id} className={`w-20 h-12 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat)}>{seat.seat_label}</button>
                 ))}
               </div>
             </div>
@@ -105,12 +70,12 @@ const App = () => {
               <h3 className="text-lg font-semibold text-gray-700">Lower Deck</h3>
               <div className="grid grid-cols-3 gap-4 p-6 bg-white shadow-lg rounded-lg">
                 {seats.filter(seat => seat.deck === 'lower').map(seat => (
-                  <button key={seat.id} className={`w-14 h-14 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_label}</button>
+                  <button key={seat.id} className={`w-20 h-12 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat)}>{seat.seat_label}</button>
                 ))}
               </div>
             </div>
           </div>
-          <button className="bg-green-600 text-white p-4 mt-6 rounded-lg shadow-lg hover:bg-green-700 transition text-lg" onClick={handlePayment}>💰 Proceed to Pay & Book</button>
+          <button className="bg-green-600 text-white p-4 mt-6 rounded-lg shadow-lg hover:bg-green-700 transition text-lg">💰 Proceed to Pay & Book</button>
         </div>
       )}
     </div>
@@ -118,4 +83,3 @@ const App = () => {
 };
 
 export default App;
-
