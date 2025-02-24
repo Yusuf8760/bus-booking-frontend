@@ -95,17 +95,17 @@ const App = () => {
           <div className="flex flex-col md:flex-row justify-center items-center gap-6">
             <div>
               <h3 className="text-md font-bold">Upper Deck</h3>
-              <div className="grid grid-cols-4 gap-3 p-4 bg-white shadow-md rounded-md">
+              <div className="grid grid-cols-3 gap-3 p-4 bg-white shadow-md rounded-md">
                 {seats.filter(seat => seat.deck === 'upper').map(seat => (
-                  <button key={seat.id} className={`w-12 h-12 rounded-md font-bold border ${seat.is_booked ? "bg-red-500 text-white" : selectedSeats.includes(seat.id) ? "bg-green-400" : "bg-gray-200"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_number}</button>
+                  <button key={seat.id} className={`w-12 h-12 rounded-md font-bold border ${seat.is_booked ? "bg-red-500 text-white" : selectedSeats.includes(seat.id) ? "bg-green-400" : "bg-gray-200"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_label}</button>
                 ))}
               </div>
             </div>
             <div>
               <h3 className="text-md font-bold">Lower Deck</h3>
-              <div className="grid grid-cols-4 gap-3 p-4 bg-white shadow-md rounded-md">
+              <div className="grid grid-cols-3 gap-3 p-4 bg-white shadow-md rounded-md">
                 {seats.filter(seat => seat.deck === 'lower').map(seat => (
-                  <button key={seat.id} className={`w-12 h-12 rounded-md font-bold border ${seat.is_booked ? "bg-red-500 text-white" : selectedSeats.includes(seat.id) ? "bg-green-400" : "bg-gray-200"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_number}</button>
+                  <button key={seat.id} className={`w-12 h-12 rounded-md font-bold border ${seat.is_booked ? "bg-red-500 text-white" : selectedSeats.includes(seat.id) ? "bg-green-400" : "bg-gray-200"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_label}</button>
                 ))}
               </div>
             </div>
