@@ -5,83 +5,112 @@ const App = () => {
   const [buses, setBuses] = useState([]);
   const [selectedBus, setSelectedBus] = useState(null);
   const [seats, setSeats] = useState([]);
-  const [selectedSeat, setSelectedSeat] = useState(null);
+  const [selectedSeats, setSelectedSeats] = useState([]);
   const [userName, setUserName] = useState("");
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
   useEffect(() => {
-    axios.get("https://bus-ticket-booking-production.up.railway.app/buses").then((res) => {
-      setBuses(res.data);
-    });
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => setRazorpayLoaded(true);
+    script.onerror = () => alert("Failed to load Razorpay");
+    document.body.appendChild(script);
+    return () => document.body.removeChild(script);
+  }, []);
+
+  useEffect(() => {
+    axios.get("https://bus-ticket-booking-production.up.railway.app/buses")
+      .then(res => setBuses(res.data))
+      .catch(error => console.error("Error fetching buses:", error));
   }, []);
 
   const fetchSeats = (busId) => {
     setSelectedBus(busId);
-    axios.get(`https://bus-ticket-booking-production.up.railway.app/buses/${busId}/seats`).then((res) => {
-      setSeats(res.data);
-    });
+    axios.get(`https://bus-ticket-booking-production.up.railway.app/buses/${busId}/seats`)
+      .then(res => setSeats(res.data))
+      .catch(error => console.error("Error fetching seats:", error));
   };
 
-  const bookSeat = () => {
-    if (!userName || !selectedBus || !selectedSeat) {
-      alert("Please enter details");
-      return;
+  const toggleSeatSelection = (seatId) => {
+    setSelectedSeats((prev) =>
+      prev.includes(seatId) ? prev.filter((id) => id !== seatId) : [...prev, seatId]
+    );
+  };
+
+  const handlePayment = async () => {
+    if (!razorpayLoaded || !window.Razorpay) return alert("Razorpay not loaded");
+    if (!userName || !selectedBus || selectedSeats.length === 0) return alert("Fill all details");
+    
+    try {
+      const orderResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/create-order", { amount: selectedSeats.length * 500 });
+      if (!orderResponse.data.success) throw new Error("Order creation failed");
+      
+      const options = {
+        key: "rzp_test_QooNDwSUafjvWt",
+        amount: orderResponse.data.order.amount,
+        currency: "INR",
+        name: "Bus Ticket Booking",
+        description: "Seat Booking Payment",
+        order_id: orderResponse.data.order.id,
+        handler: async function (response) {
+          const verifyResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/book", {
+            user_name: userName,
+            bus_id: selectedBus,
+            seat_ids: selectedSeats,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          });
+          if (verifyResponse.data.message === "Seat booked successfully!") {
+            alert("Seat booked successfully!");
+            fetchSeats(selectedBus);
+            setSelectedSeats([]);
+          } else {
+            alert("Payment verification failed");
+          }
+        },
+        prefill: { name: userName, email: "user@example.com", contact: "9876543210" },
+        theme: { color: "#F37254" },
+      };
+      new window.Razorpay(options).open();
+    } catch (error) {
+      alert("Payment failed! " + error.message);
     }
-    axios.post("https://bus-ticket-booking-production.up.railway.app/book", {
-      user_name: userName,
-      bus_id: selectedBus,
-      seat_id: selectedSeat,
-    }).then(() => {
-      alert("Seat booked successfully!");
-      fetchSeats(selectedBus);
-    });
   };
 
   return (
-    <div className="p-8">
-      <h1 className="text-xl font-bold">Bus Ticket Booking</h1>
-      <input
-        type="text"
-        placeholder="Enter your name"
-        className="border p-2 m-2"
-        onChange={(e) => setUserName(e.target.value)}
-      />
-
-      <h2 className="text-lg font-bold mt-4">Available Buses</h2>
-      <ul>
-        {buses.map((bus) => (
-          <li
-            key={bus.id}
-            className="cursor-pointer p-2 bg-gray-200 m-2"
-            onClick={() => fetchSeats(bus.id)}
-          >
-            {bus.name} - {bus.owner_name}
-          </li>
+    <div className="p-8 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold text-center mb-6 text-blue-600">🚌 Bus Ticket Booking</h1>
+      <input type="text" placeholder="Enter your name" className="border p-3 m-3 block mx-auto rounded-md shadow-sm w-80 text-center" onChange={(e) => setUserName(e.target.value)} />
+      <h2 className="text-xl font-semibold mt-6 text-center text-gray-700">Available Buses</h2>
+      <ul className="flex flex-wrap justify-center mt-4">
+        {buses.map(bus => (
+          <li key={bus.id} className="cursor-pointer p-4 bg-blue-500 text-white m-3 rounded-lg shadow-md hover:bg-blue-700 transition" onClick={() => fetchSeats(bus.id)}>{bus.name} - {bus.owner_name}</li>
         ))}
       </ul>
-
       {selectedBus && (
-        <div>
-          <h2 className="text-lg font-bold mt-4">Select Your Seat</h2>
-          <div className="grid grid-cols-4 gap-2 mt-2">
-            {seats.map((seat) => (
-              <button
-                key={seat.id}
-                className={`p-4 rounded border ${
-                  seat.is_booked ? "bg-red-500 text-white" : "bg-gray-300"
-                } ${selectedSeat === seat.id ? "bg-green-400" : ""}`}
-                disabled={seat.is_booked}
-                onClick={() => setSelectedSeat(seat.id)}
-              >
-                {seat.seat_number}
-              </button>
-            ))}
+        <div className="mt-8 text-center">
+          <h2 className="text-xl font-bold text-gray-800">💺 Select Your Seats</h2>
+          <div className="flex flex-col md:flex-row justify-center items-center gap-8 mt-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700">Upper Deck</h3>
+              <div className="grid grid-cols-3 gap-4 p-6 bg-white shadow-lg rounded-lg">
+                {seats.filter(seat => seat.deck === 'upper').map(seat => (
+                  <button key={seat.id} className={`w-14 h-14 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_label}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700">Lower Deck</h3>
+              <div className="grid grid-cols-3 gap-4 p-6 bg-white shadow-lg rounded-lg">
+                {seats.filter(seat => seat.deck === 'lower').map(seat => (
+                  <button key={seat.id} className={`w-14 h-14 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_label}</button>
+                ))}
+              </div>
+            </div>
           </div>
-          <button
-            className="bg-blue-500 text-white p-2 mt-4"
-            onClick={bookSeat}
-          >
-            Book Selected Seat
-          </button>
+          <button className="bg-green-600 text-white p-4 mt-6 rounded-lg shadow-lg hover:bg-green-700 transition text-lg" onClick={handlePayment}>💰 Proceed to Pay & Book</button>
         </div>
       )}
     </div>
@@ -89,3 +118,4 @@ const App = () => {
 };
 
 export default App;
+
