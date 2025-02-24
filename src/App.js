@@ -36,9 +36,9 @@ const App = () => {
     if (seat.seat_type === "double") {
       // Auto-select both seats if one is clicked
       const pairedSeat = seats.find(s => s.id !== seat.id && s.row === seat.row && s.position === "right");
-      const newSelection = selectedSeats.includes(seat.id) ? 
-        selectedSeats.filter(id => id !== seat.id && id !== pairedSeat?.id) : 
-        [...selectedSeats, seat.id, pairedSeat?.id].filter(Boolean);
+      const newSelection = selectedSeats.includes(seat.id) 
+        ? selectedSeats.filter(id => id !== seat.id && id !== (pairedSeat ? pairedSeat.id : null)) 
+        : [...selectedSeats, seat.id, pairedSeat ? pairedSeat.id : null].filter(Boolean);
       setSelectedSeats(newSelection);
     } else {
       // Normal seat selection
