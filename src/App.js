@@ -44,6 +44,47 @@ const App = () => {
     }
   };
 
+  const handlePayment = async () => {
+    if (!razorpayLoaded || !window.Razorpay) return alert("Razorpay not loaded");
+    if (!userName || !selectedBus || selectedSeats.length === 0) return alert("Fill all details");
+    
+    try {
+      const orderResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/create-order", { amount: selectedSeats.length * 500 });
+      if (!orderResponse.data.success) throw new Error("Order creation failed");
+      
+      const options = {
+        key: "rzp_test_QooNDwSUafjvWt",
+        amount: orderResponse.data.order.amount,
+        currency: "INR",
+        name: "Bus Ticket Booking",
+        description: "Seat Booking Payment",
+        order_id: orderResponse.data.order.id,
+        handler: async function (response) {
+          const verifyResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/book", {
+            user_name: userName,
+            bus_id: selectedBus,
+            seat_ids: selectedSeats,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          });
+          if (verifyResponse.data.message === "Seat booked successfully!") {
+            alert("Seat booked successfully!");
+            fetchSeats(selectedBus);
+            setSelectedSeats([]);
+          } else {
+            alert("Payment verification failed");
+          }
+        },
+        prefill: { name: userName, email: "user@example.com", contact: "9876543210" },
+        theme: { color: "#F37254" },
+      };
+      new window.Razorpay(options).open();
+    } catch (error) {
+      alert("Payment failed! " + error.message);
+    }
+  };
+
   return (
     <div className="p-8 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold text-center mb-6 text-blue-600">🚌 Bus Ticket Booking</h1>
@@ -57,23 +98,10 @@ const App = () => {
       {selectedBus && (
         <div className="mt-8 text-center">
           <h2 className="text-xl font-bold text-gray-800">💺 Select Your Seats</h2>
-          <div className="flex flex-col md:flex-row justify-center gap-12">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700">Upper Deck</h3>
-              <div className="grid grid-cols-4 gap-4 p-6 bg-white shadow-lg rounded-lg">
-                {seats.filter(seat => seat.deck === 'upper').map(seat => (
-                  <button key={seat.id} className={`w-28 h-14 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat)}>{seat.seat_label}</button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700">Lower Deck</h3>
-              <div className="grid grid-cols-4 gap-4 p-6 bg-white shadow-lg rounded-lg">
-                {seats.filter(seat => seat.deck === 'lower').map(seat => (
-                  <button key={seat.id} className={`w-28 h-14 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat)}>{seat.seat_label}</button>
-                ))}
-              </div>
-            </div>
+          <div className="grid grid-cols-3 gap-6">
+            {seats.map(seat => (
+              <button key={seat.id} className={`w-20 h-12 rounded-md font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat)}>{seat.seat_label}</button>
+            ))}
           </div>
           <button className="bg-green-600 text-white p-4 mt-6 rounded-lg shadow-lg hover:bg-green-700 transition text-lg" onClick={handlePayment}>💰 Proceed to Pay & Book</button>
         </div>
