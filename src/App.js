@@ -33,18 +33,9 @@ const App = () => {
   };
 
   const toggleSeatSelection = (seat) => {
-    if (seat.seat_type === "double") {
-      const pairedSeat = seats.find(s => s.row === seat.row && s.position === "right" && s.id !== seat.id);
-      if (selectedSeats.includes(seat.id)) {
-        setSelectedSeats(selectedSeats.filter(id => id !== seat.id && id !== (pairedSeat ? pairedSeat.id : null)));
-      } else {
-        setSelectedSeats([...selectedSeats, seat.id, pairedSeat ? pairedSeat.id : null].filter(Boolean));
-      }
-    } else {
-      setSelectedSeats(prev =>
-        prev.includes(seat.id) ? prev.filter(id => id !== seat.id) : [...prev, seat.id]
-      );
-    }
+    setSelectedSeats(prev =>
+      prev.includes(seat.id) ? prev.filter(id => id !== seat.id) : [...prev, seat.id]
+    );
   };
 
   const handlePayment = async () => {
