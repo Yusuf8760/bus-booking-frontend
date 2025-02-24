@@ -90,27 +90,28 @@ const App = () => {
         ))}
       </ul>
       {selectedBus && (
-        <div className="mt-8 text-center">
-          <h2 className="text-xl font-bold text-gray-800">💺 Select Your Seats</h2>
-          <div className="flex flex-col items-center space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700">Upper Deck</h3>
-              <div className="grid grid-cols-3 gap-4 p-6 bg-white shadow-lg rounded-lg">
-                {seats.filter(seat => seat.deck === 'upper').map(seat => (
-                  <button key={seat.id} className={`w-24 h-16 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat)}>{seat.seat_label}</button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700">Lower Deck</h3>
-              <div className="grid grid-cols-3 gap-4 p-6 bg-white shadow-lg rounded-lg">
-                {seats.filter(seat => seat.deck === 'lower').map(seat => (
-                  <button key={seat.id} className={`w-24 h-16 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat)}>{seat.seat_label}</button>
-                ))}
-              </div>
+        <div className="mt-8 flex justify-center space-x-10">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-700 text-center">Upper Deck</h3>
+            <div className="grid grid-cols-3 gap-4 p-6 bg-white shadow-lg rounded-lg">
+              {seats.filter(seat => seat.deck === 'upper').map(seat => (
+                <button key={seat.id} className={`w-24 h-16 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat)}>{seat.seat_label}</button>
+              ))}
             </div>
           </div>
-          <button className="bg-green-600 text-white p-4 mt-6 rounded-lg shadow-lg hover:bg-green-700 transition text-lg" onClick={handlePayment}>💰 Proceed to Pay & Book</button>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-700 text-center">Lower Deck</h3>
+            <div className="grid grid-cols-3 gap-4 p-6 bg-white shadow-lg rounded-lg">
+              {seats.filter(seat => seat.deck === 'lower').map(seat => (
+                <button key={seat.id} className={`w-24 h-16 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat)}>{seat.seat_label}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {selectedBus && (
+        <div className="text-center mt-6">
+          <button className="bg-green-600 text-white p-4 rounded-lg shadow-lg hover:bg-green-700 transition text-lg" onClick={handlePayment}>💰 Proceed to Pay & Book</button>
         </div>
       )}
     </div>
