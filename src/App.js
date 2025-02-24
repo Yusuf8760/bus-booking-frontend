@@ -81,36 +81,36 @@ const App = () => {
 
   return (
     <div className="p-8 bg-gray-100 min-h-screen">
-      <h1 className="text-2xl font-bold text-center mb-4">🚌 Bus Ticket Booking</h1>
-      <input type="text" placeholder="Enter your name" className="border p-2 m-2 block mx-auto" onChange={(e) => setUserName(e.target.value)} />
-      <h2 className="text-lg font-bold mt-4 text-center">Available Buses</h2>
-      <ul className="flex flex-wrap justify-center">
+      <h1 className="text-3xl font-bold text-center mb-6 text-blue-600">🚌 Bus Ticket Booking</h1>
+      <input type="text" placeholder="Enter your name" className="border p-3 m-3 block mx-auto rounded-md shadow-sm w-80 text-center" onChange={(e) => setUserName(e.target.value)} />
+      <h2 className="text-xl font-semibold mt-6 text-center text-gray-700">Available Buses</h2>
+      <ul className="flex flex-wrap justify-center mt-4">
         {buses.map(bus => (
-          <li key={bus.id} className="cursor-pointer p-3 bg-blue-500 text-white m-2 rounded-md" onClick={() => fetchSeats(bus.id)}>{bus.name} - {bus.owner_name}</li>
+          <li key={bus.id} className="cursor-pointer p-4 bg-blue-500 text-white m-3 rounded-lg shadow-md hover:bg-blue-700 transition" onClick={() => fetchSeats(bus.id)}>{bus.name} - {bus.owner_name}</li>
         ))}
       </ul>
       {selectedBus && (
-        <div className="mt-6 text-center">
-          <h2 className="text-lg font-bold">💺 Select Your Seats</h2>
-          <div className="flex flex-col md:flex-row justify-center items-center gap-6">
+        <div className="mt-8 text-center">
+          <h2 className="text-xl font-bold text-gray-800">💺 Select Your Seats</h2>
+          <div className="flex flex-col md:flex-row justify-center items-center gap-8 mt-4">
             <div>
-              <h3 className="text-md font-bold">Upper Deck</h3>
-              <div className="grid grid-cols-3 gap-3 p-4 bg-white shadow-md rounded-md">
+              <h3 className="text-lg font-semibold text-gray-700">Upper Deck</h3>
+              <div className="grid grid-cols-3 gap-4 p-6 bg-white shadow-lg rounded-lg">
                 {seats.filter(seat => seat.deck === 'upper').map(seat => (
-                  <button key={seat.id} className={`w-12 h-12 rounded-md font-bold border ${seat.is_booked ? "bg-red-500 text-white" : selectedSeats.includes(seat.id) ? "bg-green-400" : "bg-gray-200"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_label}</button>
+                  <button key={seat.id} className={`w-14 h-14 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_label}</button>
                 ))}
               </div>
             </div>
             <div>
-              <h3 className="text-md font-bold">Lower Deck</h3>
-              <div className="grid grid-cols-3 gap-3 p-4 bg-white shadow-md rounded-md">
+              <h3 className="text-lg font-semibold text-gray-700">Lower Deck</h3>
+              <div className="grid grid-cols-3 gap-4 p-6 bg-white shadow-lg rounded-lg">
                 {seats.filter(seat => seat.deck === 'lower').map(seat => (
-                  <button key={seat.id} className={`w-12 h-12 rounded-md font-bold border ${seat.is_booked ? "bg-red-500 text-white" : selectedSeats.includes(seat.id) ? "bg-green-400" : "bg-gray-200"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_label}</button>
+                  <button key={seat.id} className={`w-14 h-14 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat.id)}>{seat.seat_label}</button>
                 ))}
               </div>
             </div>
           </div>
-          <button className="bg-green-600 text-white p-3 mt-4 rounded-md" onClick={handlePayment}>💰 Proceed to Pay & Book</button>
+          <button className="bg-green-600 text-white p-4 mt-6 rounded-lg shadow-lg hover:bg-green-700 transition text-lg" onClick={handlePayment}>💰 Proceed to Pay & Book</button>
         </div>
       )}
     </div>
@@ -118,3 +118,4 @@ const App = () => {
 };
 
 export default App;
+
