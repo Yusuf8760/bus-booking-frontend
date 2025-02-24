@@ -33,14 +33,18 @@ const App = () => {
   };
 
   const toggleSeatSelection = (seat) => {
-    if (seat.seat_type === 'double') {
-      const pair = seats.filter(s => s.position === seat.position && s.deck === seat.deck);
-      const pairIds = pair.map(s => s.id);
-      setSelectedSeats(prev => prev.some(id => pairIds.includes(id))
-        ? prev.filter(id => !pairIds.includes(id))
-        : [...prev, ...pairIds]);
+    if (seat.seat_type === "double") {
+      // Auto-select both seats if one is clicked
+      const pairedSeat = seats.find(s => s.id !== seat.id && s.row === seat.row && s.position === "right");
+      const newSelection = selectedSeats.includes(seat.id) ? 
+        selectedSeats.filter(id => id !== seat.id && id !== pairedSeat?.id) : 
+        [...selectedSeats, seat.id, pairedSeat?.id].filter(Boolean);
+      setSelectedSeats(newSelection);
     } else {
-      setSelectedSeats(prev => prev.includes(seat.id) ? prev.filter(id => id !== seat.id) : [...prev, seat.id]);
+      // Normal seat selection
+      setSelectedSeats((prev) =>
+        prev.includes(seat.id) ? prev.filter((id) => id !== seat.id) : [...prev, seat.id]
+      );
     }
   };
 
@@ -98,9 +102,15 @@ const App = () => {
       {selectedBus && (
         <div className="mt-8 text-center">
           <h2 className="text-xl font-bold text-gray-800">💺 Select Your Seats</h2>
-          <div className="grid grid-cols-3 gap-6">
-            {seats.map(seat => (
-              <button key={seat.id} className={`w-20 h-12 rounded-md font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} disabled={seat.is_booked} onClick={() => toggleSeatSelection(seat)}>{seat.seat_label}</button>
+          <div className="grid grid-cols-3 gap-4 p-6 bg-white shadow-lg rounded-lg mx-auto max-w-2xl">
+            {seats.map((seat, index) => (
+              <button key={seat.id} 
+                className={`w-20 h-12 rounded-lg font-bold border transition duration-300 ${seat.is_booked ? "bg-gray-500 text-white cursor-not-allowed" : selectedSeats.includes(seat.id) ? "bg-green-500 text-white" : "bg-gray-300 hover:bg-gray-400"}`} 
+                disabled={seat.is_booked} 
+                onClick={() => toggleSeatSelection(seat)}>
+                {seat.seat_label}
+              </button>
+              {(seat.position === "left" && (index + 1) % 3 === 0) && <div className="w-6"></div>} 
             ))}
           </div>
           <button className="bg-green-600 text-white p-4 mt-6 rounded-lg shadow-lg hover:bg-green-700 transition text-lg" onClick={handlePayment}>💰 Proceed to Pay & Book</button>
