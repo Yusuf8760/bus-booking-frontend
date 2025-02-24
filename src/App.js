@@ -35,15 +35,16 @@ const App = () => {
   const toggleSeatSelection = (seat) => {
     if (seat.seat_type === "double") {
       // Auto-select both seats if one is clicked
-      const pairedSeat = seats.find(s => s.id !== seat.id && s.row === seat.row && s.position === "right");
-      const newSelection = selectedSeats.includes(seat.id) 
-        ? selectedSeats.filter(id => id !== seat.id && id !== (pairedSeat ? pairedSeat.id : null)) 
-        : [...selectedSeats, seat.id, pairedSeat ? pairedSeat.id : null].filter(Boolean);
-      setSelectedSeats(newSelection);
+      const pairedSeat = seats.find(s => s.row === seat.row && s.position === "right" && s.id !== seat.id);
+      if (selectedSeats.includes(seat.id)) {
+        setSelectedSeats(selectedSeats.filter(id => id !== seat.id && id !== (pairedSeat ? pairedSeat.id : null)));
+      } else {
+        setSelectedSeats([...selectedSeats, seat.id, pairedSeat ? pairedSeat.id : null].filter(Boolean));
+      }
     } else {
       // Normal seat selection
-      setSelectedSeats((prev) =>
-        prev.includes(seat.id) ? prev.filter((id) => id !== seat.id) : [...prev, seat.id]
+      setSelectedSeats(prev =>
+        prev.includes(seat.id) ? prev.filter(id => id !== seat.id) : [...prev, seat.id]
       );
     }
   };
@@ -110,7 +111,6 @@ const App = () => {
                 onClick={() => toggleSeatSelection(seat)}>
                 {seat.seat_label}
               </button>
-              {(seat.position === "left" && (index + 1) % 3 === 0) && <div className="w-6"></div>} 
             ))}
           </div>
           <button className="bg-green-600 text-white p-4 mt-6 rounded-lg shadow-lg hover:bg-green-700 transition text-lg" onClick={handlePayment}>💰 Proceed to Pay & Book</button>
