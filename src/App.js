@@ -54,21 +54,29 @@ const App = () => {
         description: "Seat Booking Payment",
         order_id: orderResponse.data.order.id,
         handler: async function (response) {
-          const verifyResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/book", {
-            user_name: userName,
-            bus_id: selectedBus,
-            seat_ids: selectedSeats,
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
-          });
-          if (verifyResponse.data.message === "Seat booked successfully!") {
-            alert("Seat booked successfully!");
-            fetchSeats(selectedBus);
-            setSelectedSeats([]);
-          } else {
-            alert("Payment verification failed");
-          }
+          try {
+  const verifyResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/book", {
+    user_name: userName,
+    bus_id: selectedBus,
+    seat_ids: selectedSeats,
+    razorpay_order_id: response.razorpay_order_id,
+    razorpay_payment_id: response.razorpay_payment_id,
+    razorpay_signature: response.razorpay_signature,
+  });
+
+  console.log("🔍 Server verification response:", verifyResponse.data);
+
+  if (verifyResponse.data.success) {  // ✅ Updated check
+    alert("✅ Seat booked successfully!");
+    fetchSeats(selectedBus);
+    setSelectedSeats([]);
+  } else {
+    alert("❌ Payment verification failed. Check logs.");
+  }
+} catch (error) {
+  console.error("⚠️ Payment verification error:", error.response ? error.response.data : error.message);
+  alert("⚠️ Payment verification error. Check console.");
+}
         },
         prefill: { name: userName, email: "user@example.com", contact: "9876543210" },
         theme: { color: "#F37254" },
