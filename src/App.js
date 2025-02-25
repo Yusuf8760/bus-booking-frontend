@@ -54,7 +54,7 @@ const App = () => {
         description: "Seat Booking Payment",
         order_id: orderResponse.data.order.id,
         handler: async function (response) {
-          try {
+try {
   const verifyResponse = await axios.post("https://bus-ticket-booking-production.up.railway.app/book", {
     user_name: userName,
     bus_id: selectedBus,
@@ -66,7 +66,7 @@ const App = () => {
 
   console.log("🔍 Server verification response:", verifyResponse.data);
 
-  if (verifyResponse.data.success) {  // ✅ Updated check
+  if (verifyResponse.data.message.includes("Seats booked successfully")) {  // ✅ Fixed condition
     alert("✅ Seat booked successfully!");
     fetchSeats(selectedBus);
     setSelectedSeats([]);
