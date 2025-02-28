@@ -32,11 +32,24 @@ const App = () => {
       .catch(error => console.error("Error fetching seats:", error));
   };
 
-  const toggleSeatSelection = (seat) => {
-    setSelectedSeats(prev =>
-      prev.includes(seat.id) ? prev.filter(id => id !== seat.id) : [...prev, seat.id]
-    );
-  };
+const toggleSeatSelection = (seat) => {
+  const pairSeat = seats.find(s => 
+    s.deck === seat.deck &&
+    (
+      (seat.seat_label.includes('C') && s.seat_label === seat.seat_label.replace('C', 'B')) ||
+      (seat.seat_label.includes('B') && s.seat_label === seat.seat_label.replace('B', 'C'))
+    )
+  );
+
+  setSelectedSeats(prev => {
+    if (prev.includes(seat.id)) {
+      return prev.filter(id => id !== seat.id && (!pairSeat || id !== pairSeat.id));
+    } else {
+      return pairSeat ? [...prev, seat.id, pairSeat.id] : [...prev, seat.id];
+    }
+  });
+};
+
 
   const handlePayment = async () => {
     if (!razorpayLoaded || !window.Razorpay) return alert("Razorpay not loaded");
